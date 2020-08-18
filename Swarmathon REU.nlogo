@@ -119,66 +119,48 @@ end
 to make-robots
 
   ;;1) Create the number of spiral-robots based on the slider value.
-  create-spiral-robots numberOfSpiralRobots[
+  let robotCount numberOfRobots
+  let spread 360 / numberOfRobots
 
-    ;;Set their size to 5.
-    set size 5
+  while [robotCount >= 0] [
 
-    ;;Set their shape to "robot".
-    set shape "robot"
+   create-spiral-robots numberOfSpiralRobots[
+     
 
-    ;;Set their color to a color other than blue.
-    set color (green + 4)
+       
 
-    ;;Set maxStepCount to 0.
-    set maxStepCount 0
 
-    ;;Set stepCount to 0.
-    set stepCount 0
+       ;;Set their size to 5.
+       set size 5
 
-    ;;Set searching? to true.
-    set searching? true
+       ;;Set their shape to "robot".
+       set shape "robot"
 
-    ;;Set returning? to false.
-    set returning? false
+       ;;Set their color to a color other than blue.
+       set color (green + 4)
 
-    ;;Set their heading to who * 90--who is an integer that represents the robot's number.
-    ;;So robots will start at (1 * 90) = 90 degrees, (2 * 90) = 180 degrees...etc.
-    ;;This prevents the spirals from overlapping as much.
-    set heading who * 90
+       ;;Set maxStepCount to 0.
+       set maxStepCount 0
+
+       ;;Set stepCount to 0.
+       set stepCount 0
+
+       ;;Set searching? to true.
+       set searching? true
+
+       ;;Set returning? to false.
+       set returning? false
+
+       ;;Set their heading to who * 90--who is an integer that represents the robot's number.
+       ;;So robots will start at (1 * 90) = 90 degrees, (2 * 90) = 180 degrees...etc.
+       ;;This prevents the spirals from overlapping as much.
+       facexy 0 1
+       left spread * robotCount
+     ]
+    set robotCount robotCount - 1
   ]
+
   ;;Create the number of DFS-robots based on the slider value.
-  create-DFS-robots numberOfDFSRobots[
-
-    ;;Set their size to 5.
-    set size 5
-
-    ;;Set their shape to "robot".
-    set shape "robot"
-
-    ;;Set their color to blue.
-    set color blue
-
-    ;;Set processingList? to false.
-    set processingList? false
-
-    ;;Set returning? to false.
-    set returning? false
-
-    ;;Set rockLocations to an empty list.
-    set rockLocations []
-
-    ;;Set locX and locY to 0.
-    set locX 0
-    set locY 0
-
-   ;;Set initialHeading to a random degree.
-    set initialHeading random 360
-
-    ;;Set the robot's heading to the value of initialHeading.
-    set heading initialHeading
-
-  ]
 
 end
 
