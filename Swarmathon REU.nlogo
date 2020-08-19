@@ -16,7 +16,6 @@
   ;;1) use two breeds of robots: spiral-robots and DFS-robots
   ;add the spiral-robots breed here
 breed [spiral-robots sprial-robot]
-breed [DFS-robots DFS-robot]
 
   ;;DFS-robots breed
 
@@ -38,28 +37,7 @@ spiral-robots-own[
 ]
 
 
-  ;;Updated from [Sw3] to be specific to DFS-robots.
-  ;;DFS robots need to know:
-  DFS-robots-own [
-     ;;are they currently working with a list of rock locations? (in the processingList? state)
-     processingList?
-
-     ;;are they currently returning to the base? (in the returning? state)
-     returning?
-
-     ;;store a list of rocks we have seen
-     ;;rockLocations is a list of lists: [ [a b] [c d]...[y z] ]
-     rockLocations
-
-     ;;target coordinate x
-     locX
-
-     ;;target coordinate y
-     locY
-
-     ;;what heading (direction they are facing in degrees) they start with
-     initialHeading
-    ]
+  ;
 
   ;;patches need to know:
   patches-own [
@@ -118,67 +96,48 @@ end
 ;; robots ins Swarmathon 3.
 to make-robots
 
-  ;;1) Create the number of spiral-robots based on the slider value.
-  create-spiral-robots numberOfSpiralRobots[
 
-    ;;Set their size to 5.
-    set size 5
+  let robotCount numberOfRobots
+  let spread 360 / numberOfRobots
+  while [robotCount >= 0] [
 
-    ;;Set their shape to "robot".
-    set shape "robot"
+    ;;1) Create the number of spiral-robots based on the slider value.
+    create-spiral-robots 1[
 
-    ;;Set their color to a color other than blue.
-    set color (green + 4)
+      ;;Set their size to 5.
+      set size 5
 
-    ;;Set maxStepCount to 0.
-    set maxStepCount 0
+      ;;Set their shape to "robot".
+      set shape "robot"
 
-    ;;Set stepCount to 0.
-    set stepCount 0
+      ;;Set their color to a color other than blue.
+      set color (green + 4)
 
-    ;;Set searching? to true.
-    set searching? true
+      ;;Set maxStepCount to 0.
+      set maxStepCount 0
 
-    ;;Set returning? to false.
-    set returning? false
+      ;;Set stepCount to 0.
+      set stepCount 0
 
-    ;;Set their heading to who * 90--who is an integer that represents the robot's number.
-    ;;So robots will start at (1 * 90) = 90 degrees, (2 * 90) = 180 degrees...etc.
-    ;;This prevents the spirals from overlapping as much.
-    set heading who * 90
+      ;;Set searching? to true.
+      set searching? true
+
+      ;;Set returning? to false.
+      set returning? false
+
+      ;; all face a certain direction
+      facexy 0 1
+
+      ;;turn a distributed amount of degrees
+      left spread * robotCount
+
+      ;;move forward in accordance with the amount of robots so that they do not collide
+      fd numberOfRobots * 1.1
+    ]
+   Move to next robots
+   set robotCount robotCount - 1
   ]
-  ;;Create the number of DFS-robots based on the slider value.
-  create-DFS-robots numberOfDFSRobots[
-
-    ;;Set their size to 5.
-    set size 5
-
-    ;;Set their shape to "robot".
-    set shape "robot"
-
-    ;;Set their color to blue.
-    set color blue
-
-    ;;Set processingList? to false.
-    set processingList? false
-
-    ;;Set returning? to false.
-    set returning? false
-
-    ;;Set rockLocations to an empty list.
-    set rockLocations []
-
-    ;;Set locX and locY to 0.
-    set locX 0
-    set locY 0
-
-   ;;Set initialHeading to a random degree.
-    set initialHeading random 360
-
-    ;;Set the robot's heading to the value of initialHeading.
-    set heading initialHeading
-
-  ]
+ 
 
 end
 
