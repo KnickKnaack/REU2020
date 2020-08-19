@@ -13,11 +13,9 @@
  extensions[bitmap]
 
 
-  ;;1) use two breeds of robots: spiral-robots and DFS-robots
-  ;add the spiral-robots breed here
+  ;;1) use breed of robots: spiral-robots
+ 
 breed [spiral-robots sprial-robot]
-
-  ;;DFS-robots breed
 
 
 
@@ -46,9 +44,6 @@ spiral-robots-own[
     ]
 
   ;;global variables
-globals [
-   numberOfRobots
-]
 
 
 
