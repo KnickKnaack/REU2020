@@ -16,7 +16,6 @@
   ;;1) use two breeds of robots: spiral-robots and DFS-robots
   ;add the spiral-robots breed here
 breed [spiral-robots sprial-robot]
-breed [DFS-robots DFS-robot]
 
   ;;DFS-robots breed
 
@@ -38,34 +37,22 @@ spiral-robots-own[
 ]
 
 
-  ;;Updated from [Sw3] to be specific to DFS-robots.
-  ;;DFS robots need to know:
-  DFS-robots-own [
-     ;;are they currently working with a list of rock locations? (in the processingList? state)
-     processingList?
-
-     ;;are they currently returning to the base? (in the returning? state)
-     returning?
-
-     ;;store a list of rocks we have seen
-     ;;rockLocations is a list of lists: [ [a b] [c d]...[y z] ]
-     rockLocations
-
-     ;;target coordinate x
-     locX
-
-     ;;target coordinate y
-     locY
-
-     ;;what heading (direction they are facing in degrees) they start with
-     initialHeading
-    ]
+  ;
 
   ;;patches need to know:
   patches-own [
      ;;base color before adding rocks
      baseColor
     ]
+
+  ;;global variables
+globals [
+   numberOfRobots
+]
+
+
+
+
 
 ;------------------------------------------------------------------------------------
  ;;;;;;;;;;;;;;;;;;
@@ -78,6 +65,7 @@ to setup
   cp ;clear patches
   bitmap:copy-to-pcolors bitmap:import "parkingLot.jpg" true
   reset-ticks ;keep track of simulation runtime
+
 
   ;setup calls these three sub procedures.
   make-robots
@@ -118,67 +106,48 @@ end
 ;; robots ins Swarmathon 3.
 to make-robots
 
-  ;;1) Create the number of spiral-robots based on the slider value.
-  create-spiral-robots numberOfSpiralRobots[
 
-    ;;Set their size to 5.
-    set size 5
+  let robotCount numberOfSpiralRobots - 1
+  let spread 360 / numberOfSpiralRobots
+  while [robotCount >= 0] [
 
-    ;;Set their shape to "robot".
-    set shape "robot"
+    ;;1) Create the number of spiral-robots based on the slider value.
+    create-spiral-robots 1[
 
-    ;;Set their color to a color other than blue.
-    set color (green + 4)
+      ;;Set their size to 5.
+      set size 5
 
-    ;;Set maxStepCount to 0.
-    set maxStepCount 0
+      ;;Set their shape to "robot".
+      set shape "robot"
 
-    ;;Set stepCount to 0.
-    set stepCount 0
+      ;;Set their color to a color other than blue.
+      set color (green + 4)
 
-    ;;Set searching? to true.
-    set searching? true
+      ;;Set maxStepCount to 0.
+      set maxStepCount 0
 
-    ;;Set returning? to false.
-    set returning? false
+      ;;Set stepCount to 0.
+      set stepCount 0
 
-    ;;Set their heading to who * 90--who is an integer that represents the robot's number.
-    ;;So robots will start at (1 * 90) = 90 degrees, (2 * 90) = 180 degrees...etc.
-    ;;This prevents the spirals from overlapping as much.
-    set heading who * 90
+      ;;Set searching? to true.
+      set searching? true
+
+      ;;Set returning? to false.
+      set returning? false
+
+      ;; all face a certain direction
+      facexy 0 1
+
+      ;;turn a distributed amount of degrees
+      left spread * robotCount
+
+      ;;move forward in accordance with the amount of robots so that they do not collide
+      fd numberOfRobots * 1.1
+    ]
+   ;;Move to next robots
+   set robotCount robotCount - 1
   ]
-  ;;Create the number of DFS-robots based on the slider value.
-  create-DFS-robots numberOfDFSRobots[
 
-    ;;Set their size to 5.
-    set size 5
-
-    ;;Set their shape to "robot".
-    set shape "robot"
-
-    ;;Set their color to blue.
-    set color blue
-
-    ;;Set processingList? to false.
-    set processingList? false
-
-    ;;Set returning? to false.
-    set returning? false
-
-    ;;Set rockLocations to an empty list.
-    set rockLocations []
-
-    ;;Set locX and locY to 0.
-    set locX 0
-    set locY 0
-
-   ;;Set initialHeading to a random degree.
-    set initialHeading random 360
-
-    ;;Set the robot's heading to the value of initialHeading.
-    set heading initialHeading
-
-  ]
 
 end
 
@@ -257,9 +226,6 @@ end
  ;; different behaviors.
 
 to robot-control
-
-  ;;ask the DFS-robots to DFS.
-  ask DFS-robots[DFS]
 
   ;;ask the spiral-robots to spiral.
   ask spiral-robots[spiral]
@@ -399,202 +365,10 @@ end
   fd 1
  end
 
-;------------------------------------------------------------------------------------
-;:::::::::::::::::::::::::::::    DFS ROBOT BEHAVIOR  :::::::::::::::::::::::::::::::
-;------------------------------------------------------------------------------------
- ;;;;;;;;;;;;;;;;;
- ;;    DFS      ;; : MAIN PROCEDURE
- ;;;;;;;;;;;;;;;;;
- ;------------------------------------------------------------------------------------
 
-to DFS
 
-  ;;Put the exit condition first. Stop when no yellow patches (rocks) remain.
-  if count patches with [pcolor = yellow] = 0 [stop]
 
-  ;;All sub procedures called after this (set-direction, do-DFS, process-list) are within the ask robots block.
-  ;;So, the procedures act as if they are already in ask robots.
-  ;;That means that when you write the sub procedures, you don't need to repeat the ask robots command.
 
-  ;;ask the DFS-robots
-  ask DFS-robots[
-
-   ;;If the robot can't move, it must've reached a boundary.
-   if not can-move? 1[
-     ;;Add the last rock to our list if we're standing on it by calling do-DFS.
-     do-DFS
-
-     ;;If there's anything in our list, turn on the processingList? status.
-     ifelse not empty? rockLocations
-     [set processingList? true]
-
-     ;;else go home to reset our search angle.
-     [set returning? true]
-   ]
-
-   ;;Main control of the procedure goes here in an ifelse statement.
-   ;;Check if we are in the processing list state and not returning. If we are, then process the list.
-   ;;(While we are processing, we'll also sometimes be in the returning? state
-   ;;at the same time when we're dropping off rocks.
-   ;;Robots should only process the list though when they're not dropping off a rock.
-      if processingList? and not returning? [process-list]
-
-   ;;If returning mode is on, the robots should return-to-base.
-      if returning? [return-to-base]
-
-   ;;Else, if the robots are not processing a list and not returning, they should do DFS.
-      if not processingList? and not returning? [do-DFS]
-
-  ]
-
-end
-
-;------------------------------------------------------------------------------------
- ;;;;;;;;;;;;;;;;;;
- ;; process-list ;; : MAIN PROCEDURE
- ;;;;;;;;;;;;;;;;;;
-;------------------------------------------------------------------------------------
-to process-list
-
-  ;;Control the robots based on the status of their internal list of rocks.
-  ;;If the robot's list is not empty:
-  ifelse not empty? rockLocations[
-
-  ;;If locX and locY are set to 0, then we just started or we just dropped off a rock.
-    if locX = 0 and locY = 0 [
-
-    ;;If they are, then we need a new destination, so reset our target coordinates, locX and locY.
-    ;;We'll write the code for that in a sub procedure, so just call the procedure for now.
-      reset-target-coords
-    ]
-
-    ;;Now move-to-location of locX locY.
-    ;;We'll write the code for that in a sub procedure, so just call the procedure for now.
-    move-to-location
-  ]
-
-  ;;rockLocations is empty. We're done processing the list.
-  [set processingList? false]
-
-  ;;Go forward 1 step.
-  fd 1
-
-end
-
-;------------------------------------------------------------------------------------
-;;Reset the robot's target coordinates when they are still processing the list but
-;;have just dropped off a rock and don't know where to go.
-;;Recall that rockLocations is a list of lists: [ [a b] [c d]...[y z] ]
-to reset-target-coords
-
-  ;;if rockLocations is not empty
-  if not empty? rockLocations[
-
-       ;;Grab the first element of rockLocations, a list of 2 coordinates: [a b]
-       let loc first rockLocations
-
-       ;;Now set robots-own x to the first element of this [a _]
-       set locX first loc
-
-       ;;and robots-own y to the last. [_ b]
-       set locY last loc
-
-       ;;and keep everything but the first list of coords (the ones we just used)
-       ;;in rockLocations. --> [ [c d]...[y z] ]
-       set rockLocations but-first rockLocations
-  ]
-
-end
-;------------------------------------------------------------------------------------
-
-;;The robot arrived at its locX locY. Pick up the rock and set the robot's mode
-;;to returning so it can drop off the rock. Remain in processing state so the robot goes
-;;back to processing the list after dropping off the rock.
-to move-to-location
-
-  ;;If we've reached our target coordinates locX and locY,
-  ifelse (pxcor = locX and pycor = locY)[
-
-       ;; pick up the rock by setting the robot's shape to the one holding the rock,
-       set shape "robot with rock"
-
-       ;; and ask the patch-here to return to its base color.
-       ask patch-here[ set pcolor baseColor]
-
-       ;; Turn on returning? mode.
-       set returning? true
-  ]
-
-  ;Else the robot has not arrived yet; face the target location.
-  [facexy locX locY]
-
- end
-
-;------------------------------------------------------------------------------------
- ;;We've used the return-to-base procedure many times.
- ;;This time, we'll make some changes to support list processing.
- to return-to-base
-
- ;; If we're at the origin, we found the base.
- ifelse pxcor = 0 and pycor = 0[
-
- ;; Change the robot's shape to the one without the rock.
-   set shape "robot"
-
- ;; We've arrived, so turn off returning? mode.
-   set returning? false
-
- ;; set locX
-   set locX 0
-
- ;; and locY to 0. Robots will return to base if they don't find anything.
-   set locY 0
-
-  ;;Use an if statement. A robot can also be here if it has finished processing a list
-  ;;of if it didn't find anything at the current angle and was sent back to base.
-  ;;If this happened, change its heading so it searches in a different direction.
-  ;;It will begin to search +searchAngle degrees from its last heading.
-   if not processingList?[
-     set initialHeading initialHeading + searchAngle
-     set heading initialHeading
-   ]
- ]
-
- ;; Else, we didn't find the origin yet--face the origin.
- [ facexy 0 0 ]
-
- ;; Go forward 1.
- fd 1
-
- end
-
-;------------------------------------------------------------------------------------
- ;;;;;;;;;;;;;;;;;
- ;; do-DFS      ;; : MAIN PROCEDURE
- ;;;;;;;;;;;;;;;;;
- ;------------------------------------------------------------------------------------
-;;Write the do-DFS procedure. do-DFS finds rocks and stores them in a list.
-to do-DFS
-
-  ;;ask the patch-here
-  ask patch-here[
-
-     ;;if its pcolor is yellow,
-     if pcolor = yellow[
-
-      ;;make a list of the coords of the rock we're on.
-      let location (list pxcor pycor)
-
-          ;;to add those coordinates to the front of their list of rocklocations and remove any duplicates.
-         ask myself[ set rockLocations remove-duplicates (fput location rockLocations)]
-
-     ]
-  ]
-
-  ;;Go forward 1.
-  fd 1
-
-end
 
 @#$#@#$#@
 GRAPHICS-WINDOW
@@ -618,8 +392,8 @@ GRAPHICS-WINDOW
 50
 -50
 50
-0
-0
+1
+1
 1
 ticks
 5.0
@@ -711,44 +485,14 @@ HORIZONTAL
 
 SLIDER
 18
-338
-190
-371
-numberOfDFSRobots
-numberOfDFSRobots
-0
-10
-0.0
-1
-1
-NIL
-HORIZONTAL
-
-SLIDER
-18
-381
-190
-414
-searchAngle
-searchAngle
-1
-90
-5.0
-1
-1
-NIL
-HORIZONTAL
-
-SLIDER
-18
-453
+365
 191
-486
+398
 numberOfSpiralRobots
 numberOfSpiralRobots
 0
 10
-4.0
+3.0
 1
 1
 NIL
@@ -767,9 +511,9 @@ pen-down?
 
 SLIDER
 19
-496
+408
 191
-529
+441
 turnAngle
 turnAngle
 0
@@ -781,20 +525,10 @@ NIL
 HORIZONTAL
 
 TEXTBOX
-19
-324
-169
-342
-sliders for DFS-robots\n
-11
-0.0
-1
-
-TEXTBOX
 18
-436
+348
 168
-454
+366
 sliders for spiral-robots
 11
 0.0
@@ -1227,17 +961,3 @@ Line -7500403 true 150 150 210 180
 @#$#@#$#@
 0
 @#$#@#$#@
-
-    © 2020 GitHub, Inc.
-    Terms
-    Privacy
-    Security
-    Status
-    Help
-
-    Contact GitHub
-    Pricing
-    API
-    Training
-    Blog
-    About
