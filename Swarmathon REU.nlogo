@@ -14,7 +14,7 @@
 
 
   ;;1) use breed of robots: spiral-robots
- 
+
 breed [spiral-robots sprial-robot]
 
 
@@ -24,6 +24,14 @@ spiral-robots-own[
     ;;counts the current number of steps the robot has taken
   stepCount
 
+  ;; radius of each agent's view to dectect other objects/agents
+  vision
+
+  ;; used for finsing nearset neighbor to possibly deflect if closer than deflectionDistance
+  nearest-neighbor
+
+  ;; paramater for minimum distance of deflection between turtles
+
     ;;the maximum number of steps a robot can take before it turns
   maxStepCount
 
@@ -32,6 +40,9 @@ spiral-robots-own[
 
     ;;is the robot returning?
   returning?
+
+  inCollision?
+
 ]
 
 
@@ -44,7 +55,9 @@ spiral-robots-own[
     ]
 
   ;;global variables
-
+globals[
+ collisions
+]
 
 
 
@@ -61,6 +74,7 @@ to setup
   bitmap:copy-to-pcolors bitmap:import "parkingLot.jpg" true
   reset-ticks ;keep track of simulation runtime
 
+  set collisions 0
 
   ;setup calls these three sub procedures.
   make-robots
@@ -130,6 +144,8 @@ to make-robots
       ;;Set returning? to false.
       set returning? false
 
+      set inCollision? false
+
       ;; all face a certain direction
       facexy 0 1
 
@@ -137,7 +153,7 @@ to make-robots
       left spread * robotCount
 
       ;;move forward in accordance with the amount of robots so that they do not collide
-      fd numberOfRobots * 1.1
+      fd numberOfSpiralRobots * 1.1
     ]
    ;;Move to next robots
    set robotCount robotCount - 1
@@ -222,14 +238,26 @@ end
 
 to robot-control
 
-  ;;ask the spiral-robots to spiral.
-  ask spiral-robots[spiral]
+
+  check-collisions
 
   ;; We can use 'turtles' to ask *all* agents to do something.
   ;; Ask the turtles
-  ask turtles [
+  ask spiral-robots [
+
+    find-nearest-neigbor
+
+    ifelse ((distance max-one-of (min-n-of 2 turtles [distance myself]) [distance myself] <= deflectionDistance))
+    [bubble-deflect] ;; intended behavior: if agent detects a collision, it will deflect from the heading of the nearest neighbor
+                    ;; need to change parameters of both functions in line above to destinguish what is cosidered a 'collision' vs possible collision (that will be deflected)
+    [spiral]
+
+
     ;; Use an ifelse statement.
     ;;If the pen-down? switch is on, put the pen down
+
+
+
     ifelse pen-down?
     [pen-down]
 
@@ -239,6 +267,27 @@ to robot-control
    tick ;;tick must be called from observer context, move into main procedure.
 end
 
+
+;------------------------------------------------------------------------------------
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ ;;    check-collisions     ;;
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+to check-collisions
+
+  ask turtles [
+
+    if (inCollision? and (distance max-one-of (min-n-of 2 turtles [distance myself]) [distance myself] > collisionDistance)) [
+      set inCollision? false
+    ]
+
+    if (not inCollision? and (distance max-one-of (min-n-of 2 turtles [distance myself]) [distance myself] <= collisionDistance)) [
+      set collisions collisions + 0.5
+      set inCollision? true
+    ]
+
+  ]
+end
 
 ;------------------------------------------------------------------------------------
 ;:::::::::::::::::::::::::::::   SPIRAL ROBOT BEHAVIOR  :::::::::::::::::::::::::::::
@@ -360,11 +409,56 @@ end
   fd 1
  end
 
+;------------------------------------------------------------------------------------
+ ;;;;;;;;;;;;;;;;;;;;;;
+ ;;  safety-bubble   ;;
+ ;;;;;;;;;;;;;;;;;;;;;;
 
 
+;;to safety-bubble
+  ;; check if not in collision and if the nearest turtle is within deflection distance
+
+ ;; bubble-deflect ;;form of collision avoidance
+
+;;end
 
 
+;------------------------------------------------------------------------------------
+ ;;;;;;;;;;;;;;;;;;;;;;
+ ;; bubble-deflect   ;;
+ ;;;;;;;;;;;;;;;;;;;;;;
 
+
+;; "bubble" because we're constantly keeping track of the nearest neighbor within the 'vision' of each agent
+;; to allow for time to react and deflect
+;; CON: only cosiders 1 neighbor at a time, not the heading of multiple other turtles per tick(might cause problems for for start of simulation)
+
+to bubble-deflect
+  turn-away([heading] of nearest-neighbor) max-deflection-turn
+  fd 1
+end
+
+;------------------------------------------------------------------------------------
+
+;; HELPER FUNCTIONS ;;
+
+to turn-away [new-heading max-turn]
+  turn-at-most (subtract-headings heading new-heading) max-turn
+end
+
+to turn-at-most [turn max-turn]
+  ifelse abs turn > 0
+  [ifelse turn > 0
+    [ rt max-turn ]
+    [lt max-turn] ]
+  [rt turn]
+
+end
+
+to find-nearest-neigbor
+  ;; max of the nearest two turtles (one of them is itself)
+  set nearest-neighbor max-one-of (min-n-of 2 turtles [distance myself]) [distance myself]
+end
 @#$#@#$#@
 GRAPHICS-WINDOW
 235
@@ -479,15 +573,15 @@ NIL
 HORIZONTAL
 
 SLIDER
-18
-365
-191
-398
+15
+347
+188
+380
 numberOfSpiralRobots
 numberOfSpiralRobots
 0
 10
-3.0
+4.0
 1
 1
 NIL
@@ -505,10 +599,10 @@ pen-down?
 -1000
 
 SLIDER
-19
-408
-191
-441
+16
+390
+188
+423
 turnAngle
 turnAngle
 0
@@ -520,10 +614,10 @@ NIL
 HORIZONTAL
 
 TEXTBOX
-18
+15
+330
+165
 348
-168
-366
 sliders for spiral-robots
 11
 0.0
@@ -543,6 +637,72 @@ largeClusterRocks
 1
 NIL
 HORIZONTAL
+
+SLIDER
+16
+536
+188
+569
+max-deflection-turn
+max-deflection-turn
+10
+180
+10.0
+5
+1
+NIL
+HORIZONTAL
+
+SLIDER
+12
+579
+184
+612
+collisionDistance
+collisionDistance
+0
+15
+6.0
+1
+1
+NIL
+HORIZONTAL
+
+MONITOR
+12
+632
+72
+677
+NIL
+collisions
+17
+1
+11
+
+SLIDER
+16
+494
+188
+527
+deflectionDistance
+deflectionDistance
+0
+15
+9.0
+1
+1
+NIL
+HORIZONTAL
+
+TEXTBOX
+27
+478
+177
+496
+Collision Avoidance
+11
+0.0
+1
 
 @#$#@#$#@
 ## WHAT IS IT?
