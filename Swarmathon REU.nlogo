@@ -94,16 +94,16 @@ to make-rocks
 
    if distribution = "random" or distribution = "random + cross" or distribution = "random + clusters"
    or distribution = "random + large clusters" or distribution = "random + clusters + cross"
-   or distribution = "random + clusters + large clusters + cross" [make-random]
+   or distribution = "random + clusters + large clusters + cross" or distribution = "random + clusters + large clusters" [make-random]
 
    if distribution = "clusters" or distribution = "clusters + cross" or distribution = "random + clusters"
    or distribution = "clusters + large clusters" or distribution = "random + clusters + cross"
-   or distribution = "random + clusters + large clusters + cross" [make-clusters]
+   or distribution = "random + clusters + large clusters + cross" or distribution = "random + clusters + large clusters" [make-clusters]
 
 
    if distribution = "large clusters" or distribution = "large clusters + cross"
    or distribution = "random + large clusters"  or distribution = "clusters + large clusters"
-   or distribution = "random + clusters + large clusters + cross" [make-large-clusters]
+   or distribution = "random + clusters + large clusters + cross" or distribution = "random + clusters + large clusters" [make-large-clusters]
 
 end
 
@@ -247,7 +247,7 @@ to robot-control
 
     find-nearest-neigbor
 
-    ifelse ((distance max-one-of (min-n-of 2 turtles [distance myself]) [distance myself] <= deflectionDistance))
+    ifelse ( (distance max-one-of (min-n-of 2 turtles [distance myself]) [distance myself] <= deflectionDistance) and (not returning?) )
     [bubble-deflect] ;; intended behavior: if agent detects a collision, it will deflect from the heading of the nearest neighbor
                     ;; need to change parameters of both functions in line above to destinguish what is cosidered a 'collision' vs possible collision (that will be deflected)
     [spiral]
@@ -539,8 +539,8 @@ CHOOSER
 193
 distribution
 distribution
-"cross" "random" "clusters" "large clusters" "random + cross" "clusters + cross" "clusters + large clusters" "large clusters + cross" "random + clusters" "random + large clusters" "random + clusters + cross" "random + clusters + large clusters + cross"
-6
+"cross" "random" "clusters" "large clusters" "random + cross" "clusters + cross" "clusters + large clusters" "large clusters + cross" "random + clusters" "random + clusters + large clusters" "random + large clusters" "random + clusters + cross" "random + clusters + large clusters + cross"
+9
 
 SLIDER
 17
@@ -551,7 +551,7 @@ singleRocks
 singleRocks
 0
 100
-50.0
+40.0
 5
 1
 NIL
@@ -566,7 +566,7 @@ clusterRocks
 clusterRocks
 0
 50
-30.0
+25.0
 5
 1
 NIL
@@ -581,7 +581,7 @@ numberOfSpiralRobots
 numberOfSpiralRobots
 0
 10
-4.0
+6.0
 1
 1
 NIL
@@ -647,7 +647,7 @@ max-deflection-turn
 max-deflection-turn
 10
 180
-10.0
+30.0
 5
 1
 NIL
@@ -662,7 +662,7 @@ collisionDistance
 collisionDistance
 0
 15
-6.0
+7.0
 1
 1
 NIL
