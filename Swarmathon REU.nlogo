@@ -43,7 +43,7 @@ spiral-robots-own[
 ]
 
 
-  ;
+  
 
   ;;patches need to know:
   patches-own [
