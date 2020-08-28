@@ -24,9 +24,6 @@ spiral-robots-own[
     ;;counts the current number of steps the robot has taken
   stepCount
 
-  ;; radius of each agent's view to dectect other objects/agents
-  vision
-
   ;; used for finsing nearset neighbor to possibly deflect if closer than deflectionDistance
   nearest-neighbor
 
@@ -429,12 +426,11 @@ end
  ;;;;;;;;;;;;;;;;;;;;;;
 
 
-;; "bubble" because we're constantly keeping track of the nearest neighbor within the 'vision' of each agent
-;; to allow for time to react and deflect
-;; CON: only cosiders 1 neighbor at a time, not the heading of multiple other turtles per tick(might cause problems for for start of simulation)
+;; "bubble" because we're constantly keeping track of the nearest neighbor within the deflection radius of each agent
+;; to allow for time to react and deflect before a collision is counted
 
 to bubble-deflect
-  turn-away([heading] of nearest-neighbor) max-deflection-turn
+  turn-a(nearest-neighbor) max-deflection-turn
   fd 1
 end
 
@@ -442,18 +438,12 @@ end
 
 ;; HELPER FUNCTIONS ;;
 
-to turn-away [new-heading max-turn]
-  turn-at-most (subtract-headings heading new-heading) max-turn
+;; best to set max-turn to within the range of 125-155 degrees [right/away] which works best with spiral search
+to turn-a [neighbor max-turn]
+  set heading towards neighbor
+  rt max-turn
 end
 
-to turn-at-most [turn max-turn]
-  ifelse abs turn > 0
-  [ifelse turn > 0
-    [ rt max-turn ]
-    [lt max-turn] ]
-  [rt turn]
-
-end
 
 to find-nearest-neigbor
   ;; max of the nearest two turtles (one of them is itself)
@@ -641,16 +631,16 @@ HORIZONTAL
 SLIDER
 16
 536
-188
+251
 569
 max-deflection-turn
 max-deflection-turn
-10
-180
-30.0
+125
+155
+155.0
 5
 1
-NIL
+Degrees
 HORIZONTAL
 
 SLIDER
@@ -662,7 +652,7 @@ collisionDistance
 collisionDistance
 0
 15
-7.0
+3.0
 1
 1
 NIL
@@ -688,7 +678,7 @@ deflectionDistance
 deflectionDistance
 0
 15
-9.0
+8.0
 1
 1
 NIL
