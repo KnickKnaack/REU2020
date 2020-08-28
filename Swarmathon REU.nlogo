@@ -54,6 +54,7 @@ spiral-robots-own[
   ;;global variables
 globals[
  collisions
+ rocksCollected
 ]
 
 
@@ -72,6 +73,7 @@ to setup
   reset-ticks ;keep track of simulation runtime
 
   set collisions 0
+  set rocksCollected 0
 
   ;setup calls these three sub procedures.
   make-robots
@@ -235,19 +237,32 @@ end
 
 to robot-control
 
-
-  check-collisions
-
   ;; We can use 'turtles' to ask *all* agents to do something.
   ;; Ask the turtles
   ask spiral-robots [
 
     find-nearest-neigbor
 
-    ifelse ( (distance max-one-of (min-n-of 2 turtles [distance myself]) [distance myself] <= deflectionDistance) and (not returning?) )
-    [bubble-deflect] ;; intended behavior: if agent detects a collision, it will deflect from the heading of the nearest neighbor
-                    ;; need to change parameters of both functions in line above to destinguish what is cosidered a 'collision' vs possible collision (that will be deflected)
-    [spiral]
+
+
+    ifelse (returning?) [
+      ifelse ( (distance nearest-neighbor <= waitDistance) and ([returning?] of nearest-neighbor) and (distancexy 0 0 > ([distancexy 0 0] of nearest-neighbor)) ) [
+
+      ]
+      [spiral]
+    ]
+
+
+    [
+      ifelse ( (distance nearest-neighbor <= deflectionDistance))
+      [bubble-deflect] ;; intended behavior: if agent detects a collision, it will deflect from the heading of the nearest neighbor
+                       ;; need to change parameters of both functions in line above to destinguish what is cosidered a 'collision' vs possible collision (that will be deflected)
+      [spiral]
+    ]
+
+
+
+
 
 
     ;; Use an ifelse statement.
@@ -261,6 +276,9 @@ to robot-control
     ;;Else take the pen up.
     [pen-up]
   ]
+
+  check-collisions
+
    tick ;;tick must be called from observer context, move into main procedure.
 end
 
@@ -274,11 +292,11 @@ to check-collisions
 
   ask turtles [
 
-    if (inCollision? and (distance max-one-of (min-n-of 2 turtles [distance myself]) [distance myself] > collisionDistance)) [
+    if (inCollision? and (distance nearest-neighbor > collisionDistance)) [
       set inCollision? false
     ]
 
-    if (not inCollision? and (distance max-one-of (min-n-of 2 turtles [distance myself]) [distance myself] <= collisionDistance)) [
+    if (not inCollision? and (distance nearest-neighbor <= collisionDistance)) [
       set collisions collisions + 0.5
       set inCollision? true
     ]
@@ -356,6 +374,8 @@ end
 
      ;;  Change the patch color back to its original color.
       set pcolor baseColor
+
+      set rocksCollected rocksCollected + 1
 
        ;; The robot asks itself to:
       ask myself [
@@ -447,7 +467,7 @@ end
 
 to find-nearest-neigbor
   ;; max of the nearest two turtles (one of them is itself)
-  set nearest-neighbor max-one-of (min-n-of 2 turtles [distance myself]) [distance myself]
+  set nearest-neighbor min-one-of other turtles [distance myself]
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
@@ -597,7 +617,7 @@ turnAngle
 turnAngle
 0
 90
-25.0
+15.0
 1
 1
 NIL
@@ -635,9 +655,9 @@ SLIDER
 569
 max-deflection-turn
 max-deflection-turn
-125
-155
-155.0
+45
+180
+120.0
 5
 1
 Degrees
@@ -652,7 +672,7 @@ collisionDistance
 collisionDistance
 0
 15
-3.0
+6.0
 1
 1
 NIL
@@ -678,7 +698,7 @@ deflectionDistance
 deflectionDistance
 0
 15
-8.0
+9.0
 1
 1
 NIL
@@ -693,6 +713,32 @@ Collision Avoidance
 11
 0.0
 1
+
+SLIDER
+12
+691
+184
+724
+waitDistance
+waitDistance
+5
+20
+13.0
+1
+1
+NIL
+HORIZONTAL
+
+MONITOR
+93
+634
+186
+679
+NIL
+rocksCollected
+17
+1
+11
 
 @#$#@#$#@
 ## WHAT IS IT?
