@@ -40,6 +40,12 @@ spiral-robots-own[
 
   inCollision?
 
+  hasIce?
+
+  hasMetal?
+
+  hasRock?
+
 ]
 
 
@@ -55,6 +61,9 @@ spiral-robots-own[
 globals[
  collisions
  rocksCollected
+ iceChance
+ metalChance
+ rockChance
 ]
 
 
@@ -74,6 +83,9 @@ to setup
 
   set collisions 0
   set rocksCollected 0
+  set iceChance Ice_InitialPercentChance / 100
+  set metalChance Metal_InitialPercentChance / 100
+  set rockChance Rock_InitialPercentChance / 100
 
   ;setup calls these three sub procedures.
   ask patches [ set baseColor pcolor]
@@ -146,6 +158,12 @@ to make-robots
       set returning? false
 
       set inCollision? false
+
+      set hasIce? false
+
+      set hasMetal? false
+
+      set hasRock? false
 
       ;; all face a certain direction
       facexy 0 1
@@ -464,6 +482,7 @@ end
    ;;Ask the 8 patches around the robot (neighbors)
   ask neighbors [
      ;;if the patch color is yellow,
+     if (random-float 1 < rockChance) [
     if pcolor = yellow [
 
      ;;  Change the patch color back to its original color.
@@ -480,12 +499,16 @@ end
          ;; Turn on returning?,
         set returning? true
 
+        set hasRock? true
+
          ;; and set its shape to the one holding the rock.
         set shape "robot with rock"
       ]
     ]
+    ]
 
     ;; ice nodes
+    if (random-float 1 < iceChance) [
     if pcolor = blue [
 
      ;;  Change the patch color back to its original color.
@@ -500,13 +523,17 @@ end
          ;; Turn on returning?,
         set returning? true
 
+        set hasIce? true
+
          ;; and set its shape to the one holding the rock.
         set shape "robot with rock"
       ]
     ]
+    ]
 
 
-    ;; meatal nodes
+    ;; metal nodes
+    if (random-float 1 < metalChance) [
     if pcolor = orange - 1 [
 
      ;;  Change the patch color back to its original color.
@@ -521,9 +548,12 @@ end
          ;; Turn on returning?,
         set returning? true
 
+        set hasMetal? true
+
          ;; and set its shape to the one holding the rock.
         set shape "robot with rock"
       ]
+    ]
     ]
 
 
@@ -552,6 +582,8 @@ end
      ;set returning? to false,
     set returning? false
 
+    change-priorities
+
      ;set its shape to the robot without the rock
     set shape "robot"
 
@@ -565,17 +597,40 @@ end
  end
 
 ;------------------------------------------------------------------------------------
- ;;;;;;;;;;;;;;;;;;;;;;
- ;;  safety-bubble   ;;
- ;;;;;;;;;;;;;;;;;;;;;;
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;
+ ;;  change-priorities   ;;
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
-;;to safety-bubble
-  ;; check if not in collision and if the nearest turtle is within deflection distance
+to change-priorities
+  ;;robots with ice
+  ifelse (hasIce?) [
+    set iceChance iceChance - (Ice_PercentDegradePerCollection / 100)
+    set metalChance metalChance + (Metal_PercentIncreasePerOtherCollection / 100)
+    set rockChance rockChance + (Rock_PercentIncreasePerOtherCollection / 100)
 
- ;; bubble-deflect ;;form of collision avoidance
+    set hasIce? false
+  ]
 
-;;end
+  ;;robots with meatal
+  [ifelse (hasmetal?) [
+    set iceChance iceChance + (Ice_PercentIncreasePerOtherCollection / 100)
+    set metalChance metalChance - (Metal_PercentDegradePerCollection / 100)
+    set rockChance rockChance + (Rock_PercentIncreasePerOtherCollection / 100)
+
+    set hasIce? false
+  ]
+
+  ;;robots with rock
+  [if (hasRock?) [
+    set iceChance iceChance + (Ice_PercentIncreasePerOtherCollection / 100)
+    set metalChance metalChance + (Metal_PercentIncreasePerOtherCollection / 100)
+    set rockChance rockChance - (Rock_PercentDegradePerCollection / 100)
+
+    set hasIce? false
+  ]]]
+
+end
 
 
 ;------------------------------------------------------------------------------------
@@ -875,6 +930,174 @@ MONITOR
 NIL
 rocksCollected
 17
+1
+11
+
+SLIDER
+796
+47
+984
+80
+Ice_InitialPercentChance
+Ice_InitialPercentChance
+0
+100
+100.0
+1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+794
+95
+995
+128
+Metal_InitialPercentChance
+Metal_InitialPercentChance
+0
+100
+0.0
+1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+793
+146
+990
+179
+Rock_InitialPercentChance
+Rock_InitialPercentChance
+0
+100
+0.0
+1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+790
+233
+1030
+266
+Ice_PercentDegradePerCollection
+Ice_PercentDegradePerCollection
+0
+10
+0.5
+0.1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+789
+280
+1041
+313
+Metal_PercentDegradePerCollection
+Metal_PercentDegradePerCollection
+0
+10
+0.0
+0.1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+789
+327
+1038
+360
+Rock_PercentDegradePerCollection
+Rock_PercentDegradePerCollection
+0
+10
+0.0
+0.1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+785
+408
+1058
+441
+Ice_PercentIncreasePerOtherCollection
+Ice_PercentIncreasePerOtherCollection
+0
+5
+1.01
+0.01
+1
+NIL
+HORIZONTAL
+
+SLIDER
+785
+455
+1071
+488
+Metal_PercentIncreasePerOtherCollection
+Metal_PercentIncreasePerOtherCollection
+0
+10
+0.1
+0.1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+784
+502
+1066
+535
+Rock_PercentIncreasePerOtherCollection
+Rock_PercentIncreasePerOtherCollection
+0
+10
+0.1
+0.1
+1
+NIL
+HORIZONTAL
+
+MONITOR
+801
+567
+879
+612
+NIL
+rockChance
+3
+1
+11
+
+MONITOR
+891
+565
+976
+610
+NIL
+metalChance
+3
+1
+11
+
+MONITOR
+983
+563
+1053
+608
+NIL
+iceChance
+3
 1
 11
 
