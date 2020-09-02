@@ -76,16 +76,16 @@ to setup
   set rocksCollected 0
 
   ;setup calls these three sub procedures.
+  ask patches [ set baseColor pcolor]
   make-robots
-  make-rocks
+  make-resources
   make-base
 end
 
 ;This sub procedure has been completed for you.
 ;------------------------------------------------------------------------------------
 ;------------------------------------------------------------------------------------
-to make-rocks
-   ask patches [ set baseColor pcolor]
+to make-resources
 
    if distribution = "cross" or distribution = "random + cross" or distribution = "large clusters + cross"
    or distribution = "clusters + cross" or distribution = "random + clusters + cross"
@@ -93,18 +93,20 @@ to make-rocks
 
    if distribution = "random" or distribution = "random + cross" or distribution = "random + clusters"
    or distribution = "random + large clusters" or distribution = "random + clusters + cross"
-   or distribution = "random + clusters + large clusters + cross" or distribution = "random + clusters + large clusters" [make-random]
+   or distribution = "random + clusters + large clusters + cross" or distribution = "random + clusters + large clusters" [make-random make-random-i make-random-m]
 
    if distribution = "clusters" or distribution = "clusters + cross" or distribution = "random + clusters"
    or distribution = "clusters + large clusters" or distribution = "random + clusters + cross"
-   or distribution = "random + clusters + large clusters + cross" or distribution = "random + clusters + large clusters" [make-clusters]
+   or distribution = "random + clusters + large clusters + cross" or distribution = "random + clusters + large clusters" [make-clusters make-clusters-i make-clusters-m]
 
 
    if distribution = "large clusters" or distribution = "large clusters + cross"
    or distribution = "random + large clusters"  or distribution = "clusters + large clusters"
-   or distribution = "random + clusters + large clusters + cross" or distribution = "random + clusters + large clusters" [make-large-clusters]
+   or distribution = "random + clusters + large clusters + cross" or distribution = "random + clusters + large clusters" [make-large-clusters make-large-clusters-i make-large-clusters-m]
 
 end
+
+
 
 ;Fill in the next sub procedure.
 ;------------------------------------------------------------------------------------
@@ -187,6 +189,30 @@ to make-random
      ]
 end
 
+to make-random-i
+   let targetPatches singleRocks
+     while [targetPatches > 0][
+       ask one-of patches[
+         if pcolor != yellow and pcolor != blue and pcolor != orange - 1[
+           set pcolor blue
+           set targetPatches targetPatches - 1
+         ]
+       ]
+     ]
+end
+
+to make-random-m
+   let targetPatches singleRocks
+     while [targetPatches > 0][
+       ask one-of patches[
+         if pcolor != yellow and pcolor != blue and pcolor != orange - 1[
+           set pcolor orange - 1
+           set targetPatches targetPatches - 1
+         ]
+       ]
+     ]
+end
+
 ;------------------------------------------------------------------------------------
 ;;Place rocks in clusters.
 to make-clusters
@@ -202,13 +228,48 @@ to make-clusters
      ]
 end
 
+to make-clusters-i
+   let targetClusters clusterRocks
+     while [targetClusters > 0][
+       ask one-of patches[
+           if pcolor != yellow and [pcolor] of neighbors4 != yellow and
+      pcolor != blue and [pcolor] of neighbors4 != blue and
+      pcolor != orange - 1 and [pcolor] of neighbors4 != orange - 1 [
+
+           set pcolor blue
+           ask neighbors4[ set pcolor blue ]
+           set targetClusters targetClusters - 1
+         ]
+       ]
+     ]
+end
+
+to make-clusters-m
+   let targetClusters clusterRocks
+     while [targetClusters > 0][
+       ask one-of patches[
+           if pcolor != yellow and [pcolor] of neighbors4 != yellow and
+      pcolor != blue and [pcolor] of neighbors4 != blue and
+      pcolor != orange - 1 and [pcolor] of neighbors4 != orange - 1 [
+
+           set pcolor orange - 1
+           ask neighbors4[ set pcolor orange - 1 ]
+           set targetClusters targetClusters - 1
+         ]
+       ]
+     ]
+end
+
+
 ;------------------------------------------------------------------------------------
 ;;Place rocks in large clusters.
 to make-large-clusters
    let targetLargeClusters largeClusterRocks
    while [targetLargeClusters > 0][
      ask one-of patches[
-       if pcolor != yellow and [pcolor] of patches in-radius 3 != yellow[
+       if pcolor != yellow and [pcolor] of (patches in-radius 3) != yellow and
+      pcolor != blue and [pcolor] of patches in-radius 3 != blue and
+      pcolor != orange - 1 and [pcolor] of patches in-radius 3 != (orange - 1) [
          set pcolor yellow
          ask patches in-radius 3 [set pcolor yellow]
          set targetLargeClusters targetLargeClusters - 1
@@ -216,6 +277,39 @@ to make-large-clusters
      ]
      ]
 end
+
+to make-large-clusters-i
+   let targetLargeClusters largeClusterRocks
+   while [targetLargeClusters > 0][
+     ask one-of patches[
+      if pcolor != yellow and [pcolor] of (patches in-radius 3) != yellow and
+      pcolor != blue and [pcolor] of patches in-radius 3 != blue and
+      pcolor != orange - 1 and [pcolor] of patches in-radius 3 != (orange - 1) [
+
+         set pcolor blue
+         ask patches in-radius 3 [set pcolor blue]
+         set targetLargeClusters targetLargeClusters - 1
+       ]
+     ]
+     ]
+end
+
+to make-large-clusters-m
+   let targetLargeClusters largeClusterRocks
+   while [targetLargeClusters > 0][
+     ask one-of patches[
+      if pcolor != yellow and [pcolor] of (patches in-radius 3) != yellow and
+      pcolor != blue and [pcolor] of patches in-radius 3 != blue and
+      pcolor != orange - 1 and [pcolor] of patches in-radius 3 != (orange - 1) [
+
+         set pcolor orange - 1
+         ask patches in-radius 3 [set pcolor orange - 1]
+         set targetLargeClusters targetLargeClusters - 1
+       ]
+     ]
+   ]
+end
+
 
 ;------------------------------------------------------------------------------------
 ;Make a base at the origin.
@@ -342,7 +436,7 @@ end
       fd 1
 
      ;;look-for rocks,
-      look-for-rocks
+      look-for-resources
 
      ;;then reduce stepCount by 1.
       set stepCount stepCount - 1
@@ -366,7 +460,7 @@ end
  ;------------------------------------------------------------------------------------
  ;;1) Write look-for-rocks the same way you did for Swarmathon 1 (before site fidelity).
 
- to look-for-rocks
+ to look-for-resources
    ;;Ask the 8 patches around the robot (neighbors)
   ask neighbors [
      ;;if the patch color is yellow,
@@ -390,8 +484,52 @@ end
         set shape "robot with rock"
       ]
     ]
+
+    ;; ice nodes
+    if pcolor = blue [
+
+     ;;  Change the patch color back to its original color.
+      set pcolor baseColor
+
+       ;; The robot asks itself to:
+      ask myself [
+
+         ;; Turn off searching?,
+        set searching? false
+
+         ;; Turn on returning?,
+        set returning? true
+
+         ;; and set its shape to the one holding the rock.
+        set shape "robot with rock"
+      ]
+    ]
+
+
+    ;; meatal nodes
+    if pcolor = orange - 1 [
+
+     ;;  Change the patch color back to its original color.
+      set pcolor baseColor
+
+       ;; The robot asks itself to:
+      ask myself [
+
+         ;; Turn off searching?,
+        set searching? false
+
+         ;; Turn on returning?,
+        set returning? true
+
+         ;; and set its shape to the one holding the rock.
+        set shape "robot with rock"
+      ]
+    ]
+
+
   ]
  end
+
 
  ;------------------------------------------------------------------------------------
  ;;2) Write return-to-base-spiral.
@@ -498,9 +636,9 @@ ticks
 5.0
 
 BUTTON
-14
+13
 10
-81
+80
 44
 setup
 setup
@@ -561,7 +699,7 @@ singleRocks
 singleRocks
 0
 100
-40.0
+5.0
 5
 1
 NIL
@@ -576,7 +714,7 @@ clusterRocks
 clusterRocks
 0
 50
-25.0
+10.0
 5
 1
 NIL
@@ -604,7 +742,7 @@ SWITCH
 142
 pen-down?
 pen-down?
-0
+1
 1
 -1000
 
@@ -642,7 +780,7 @@ largeClusterRocks
 largeClusterRocks
 0
 20
-5.0
+2.0
 1
 1
 NIL
@@ -698,7 +836,7 @@ deflectionDistance
 deflectionDistance
 0
 15
-9.0
+12.0
 1
 1
 NIL
@@ -723,7 +861,7 @@ waitDistance
 waitDistance
 5
 20
-13.0
+17.0
 1
 1
 NIL
