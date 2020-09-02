@@ -78,6 +78,8 @@ to setup
   ;setup calls these three sub procedures.
   make-robots
   make-rocks
+  make-ice
+  make-metal
   make-base
 end
 
@@ -105,6 +107,44 @@ to make-rocks
    or distribution = "random + clusters + large clusters + cross" or distribution = "random + clusters + large clusters" [make-large-clusters]
 
 end
+
+to make-ice
+   ask patches [ set baseColor pcolor]
+
+
+   if distribution = "random" or distribution = "random + cross" or distribution = "random + clusters"
+   or distribution = "random + large clusters" or distribution = "random + clusters + cross"
+   or distribution = "random + clusters + large clusters + cross" or distribution = "random + clusters + large clusters" [make-random-i]
+
+   if distribution = "clusters" or distribution = "clusters + cross" or distribution = "random + clusters"
+   or distribution = "clusters + large clusters" or distribution = "random + clusters + cross"
+   or distribution = "random + clusters + large clusters + cross" or distribution = "random + clusters + large clusters" [make-clusters-i]
+
+
+   if distribution = "large clusters" or distribution = "large clusters + cross"
+   or distribution = "random + large clusters"  or distribution = "clusters + large clusters"
+   or distribution = "random + clusters + large clusters + cross" or distribution = "random + clusters + large clusters" [make-large-clusters-i]
+
+end
+
+to make-metal
+   ask patches [ set baseColor pcolor]
+
+   if distribution = "random" or distribution = "random + cross" or distribution = "random + clusters"
+   or distribution = "random + large clusters" or distribution = "random + clusters + cross"
+   or distribution = "random + clusters + large clusters + cross" or distribution = "random + clusters + large clusters" [make-random-m]
+
+   if distribution = "clusters" or distribution = "clusters + cross" or distribution = "random + clusters"
+   or distribution = "clusters + large clusters" or distribution = "random + clusters + cross"
+   or distribution = "random + clusters + large clusters + cross" or distribution = "random + clusters + large clusters" [make-clusters-m]
+
+
+   if distribution = "large clusters" or distribution = "large clusters + cross"
+   or distribution = "random + large clusters"  or distribution = "clusters + large clusters"
+   or distribution = "random + clusters + large clusters + cross" or distribution = "random + clusters + large clusters" [make-large-clusters-m]
+
+end
+
 
 ;Fill in the next sub procedure.
 ;------------------------------------------------------------------------------------
@@ -187,6 +227,30 @@ to make-random
      ]
 end
 
+to make-random-i
+   let targetPatches singleRocks
+     while [targetPatches > 0][
+       ask one-of patches[
+         if pcolor != yellow and pcolor != blue and pcolor != grey + 4[
+           set pcolor blue
+           set targetPatches targetPatches - 1
+         ]
+       ]
+     ]
+end
+
+to make-random-m
+   let targetPatches singleRocks
+     while [targetPatches > 0][
+       ask one-of patches[
+         if pcolor != yellow and pcolor != blue and pcolor != grey + 4[
+           set pcolor grey - 4
+           set targetPatches targetPatches - 1
+         ]
+       ]
+     ]
+end
+
 ;------------------------------------------------------------------------------------
 ;;Place rocks in clusters.
 to make-clusters
@@ -202,6 +266,39 @@ to make-clusters
      ]
 end
 
+to make-clusters-i
+   let targetClusters clusterRocks
+     while [targetClusters > 0][
+       ask one-of patches[
+           if pcolor != yellow and [pcolor] of neighbors4 != yellow and
+      pcolor != blue and [pcolor] of neighbors4 != blue and
+      pcolor != grey + 4 and [pcolor] of neighbors4 != grey + 4 [
+
+           set pcolor blue
+           ask neighbors4[ set pcolor blue ]
+           set targetClusters targetClusters - 1
+         ]
+       ]
+     ]
+end
+
+to make-clusters-m
+   let targetClusters clusterRocks
+     while [targetClusters > 0][
+       ask one-of patches[
+           if pcolor != yellow and [pcolor] of neighbors4 != yellow and
+      pcolor != blue and [pcolor] of neighbors4 != blue and
+      pcolor != grey + 4 and [pcolor] of neighbors4 != grey + 4 [
+
+           set pcolor grey + 4
+           ask neighbors4[ set pcolor grey + 4 ]
+           set targetClusters targetClusters - 1
+         ]
+       ]
+     ]
+end
+
+
 ;------------------------------------------------------------------------------------
 ;;Place rocks in large clusters.
 to make-large-clusters
@@ -216,6 +313,39 @@ to make-large-clusters
      ]
      ]
 end
+
+to make-large-clusters-i
+   let targetLargeClusters largeClusterRocks
+   while [targetLargeClusters > 0][
+     ask one-of patches[
+      if pcolor != yellow and [pcolor] of patches in-radius 3 != yellow and
+      pcolor != blue and [pcolor] of patches in-radius 3 != blue and
+      pcolor != grey + 4 and [pcolor] of patches in-radius 3 != grey + 4 [
+
+         set pcolor blue
+         ask patches in-radius 3 [set pcolor blue]
+         set targetLargeClusters targetLargeClusters - 1
+       ]
+     ]
+     ]
+end
+
+to make-large-clusters-m
+   let targetLargeClusters largeClusterRocks
+   while [targetLargeClusters > 0][
+     ask one-of patches[
+      if pcolor != yellow and [pcolor] of patches in-radius 3 != yellow and
+      pcolor != blue and [pcolor] of patches in-radius 3 != blue and
+      pcolor != grey + 4 and [pcolor] of patches in-radius 3 != grey + 4 [
+
+         set pcolor grey - 4
+         ask patches in-radius 3 [set pcolor grey + 4]
+         set targetLargeClusters targetLargeClusters - 1
+       ]
+     ]
+     ]
+end
+
 
 ;------------------------------------------------------------------------------------
 ;Make a base at the origin.
@@ -344,6 +474,10 @@ end
      ;;look-for rocks,
       look-for-rocks
 
+      look-for-ice
+
+      look-for-metal
+
      ;;then reduce stepCount by 1.
       set stepCount stepCount - 1
   ]
@@ -376,6 +510,56 @@ end
       set pcolor baseColor
 
       set rocksCollected rocksCollected + 1
+
+       ;; The robot asks itself to:
+      ask myself [
+
+         ;; Turn off searching?,
+        set searching? false
+
+         ;; Turn on returning?,
+        set returning? true
+
+         ;; and set its shape to the one holding the rock.
+        set shape "robot with rock"
+      ]
+    ]
+  ]
+ end
+
+to look-for-ice
+   ;;Ask the 8 patches around the robot (neighbors)
+  ask neighbors [
+     ;;if the patch color is yellow,
+    if pcolor = blue [
+
+     ;;  Change the patch color back to its original color.
+      set pcolor baseColor
+
+       ;; The robot asks itself to:
+      ask myself [
+
+         ;; Turn off searching?,
+        set searching? false
+
+         ;; Turn on returning?,
+        set returning? true
+
+         ;; and set its shape to the one holding the rock.
+        set shape "robot with rock"
+      ]
+    ]
+  ]
+ end
+
+to look-for-metal
+   ;;Ask the 8 patches around the robot (neighbors)
+  ask neighbors [
+
+    if pcolor = grey + 4 [
+
+     ;;  Change the patch color back to its original color.
+      set pcolor baseColor
 
        ;; The robot asks itself to:
       ask myself [
